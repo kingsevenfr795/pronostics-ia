@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pronostics CDM 2026</title>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --surface: #161a20;
+    --surface2: #1e2330;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f2f5;
+    --muted: #7a8494;
+    --dim: #3e4756;
+    --green: #2ecc71;
+    --green-bg: rgba(46,204,113,0.1);
+    --green-text: #27ae60;
+    --amber: #f39c12;
+    --amber-bg: rgba(243,156,18,0.1);
+    --amber-text: #d68910;
+    --red: #e74c3c;
+    --red-bg: rgba(231,76,60,0.1);
+    --red-text: #c0392b;
+    --blue: #3498db;
+    --blue-bg: rgba(52,152,219,0.1);
+    --accent: #4f8ef7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  
+  header { border-bottom: 1px solid var(--border); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--bg); z-index: 10; }
+  .logo { font-size: 15px; font-weight: 700; letter-spacing: .04em; color: var(--text); }
+  .logo span { color: var(--accent); }
+  .badge-live { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; background: var(--green-bg); color: var(--green); letter-spacing: .05em; }
+ 
+  main { max-width: 820px; margin: 0 auto; padding: 32px 20px 80px; }
+ 
+  .page-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .page-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; }
+ 
+  /* INPUT SECTION */
+  .input-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .input-section h2 { font-size: 13px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+  .teams-row { display: grid; grid-template-columns: 1fr 40px 1fr; gap: 12px; align-items: start; margin-bottom: 16px; }
+  .vs-label { text-align: center; font-size: 13px; color: var(--muted); padding-top: 30px; font-weight: 600; }
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-group label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .input-group input[type=text] {
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px;
+    color: var(--text); font-size: 14px; padding: 10px 12px; width: 100%;
+    transition: border-color .2s;
+  }
+  .input-group input[type=text]:focus { outline: none; border-color: var(--accent); }
+  .input-group textarea {
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px;
+    color: var(--text); font-size: 12px; padding: 10px 12px; width: 100%; resize: vertical;
+    min-height: 110px; font-family: 'Courier New', monospace; line-height: 1.5;
+    transition: border-color .2s;
+  }
+  .input-group textarea:focus { outline: none; border-color: var(--accent); }
+  .input-group textarea::placeholder { color: var(--dim); }
+  .options-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .input-group select {
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px;
+    color: var(--text); font-size: 13px; padding: 10px 12px; width: 100%; cursor: pointer;
+  }
+  .input-group select:focus { outline: none; border-color: var(--accent); }
+  .btn-analyze {
+    width: 100%; padding: 13px; background: var(--accent); color: #fff;
+    border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; letter-spacing: .03em; transition: opacity .2s, transform .1s;
+  }
+  .btn-analyze:hover { opacity: .9; }
+  .btn-analyze:active { transform: scale(.99); }
+  .btn-analyze:disabled { opacity: .4; cursor: not-allowed; }
+  .paste-hint { font-size: 11px; color: var(--dim); margin-top: 5px; }
+ 
+  /* RESULTS */
+  #results { display: none; }
+ 
+  .prono-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .prono-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+  .prono-match { font-size: 18px; font-weight: 700; }
+  .conf-pill { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; letter-spacing: .05em; }
+  .conf-high { background: var(--green-bg); color: var(--green); }
+  .conf-med { background: var(--amber-bg); color: var(--amber); }
+  .conf-low { background: var(--red-bg); color: var(--red); }
+ 
+  .prob-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .prob-item { text-align: center; }
+  .prob-team { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+  .prob-bar-wrap { height: 6px; background: rgba(255,255,255,.07); border-radius: 3px; margin-bottom: 8px; overflow: hidden; }
+  .prob-bar { height: 100%; border-radius: 3px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+  .prob-pct { font-size: 22px; font-weight: 700; }
+  .pct-home { color: var(--accent); }
+  .pct-draw { color: var(--muted); }
+  .pct-away { color: #e67e22; }
+ 
+  .verdict-box { background: var(--surface2); border-radius: 8px; padding: 14px 16px; display: flex; gap: 14px; align-items: center; }
+  .v-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--blue-bg); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .v-main { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .v-sub { font-size: 12px; color: var(--muted); }
+ 
+  .explain-box { background: rgba(79,142,247,0.06); border: 1px solid rgba(79,142,247,0.15); border-radius: 8px; padding: 14px 16px; margin-top: 14px; font-size: 13px; color: #a8b8d0; line-height: 1.7; }
+  .explain-box strong { color: var(--text); font-weight: 600; }
+  .sos-tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 4px; }
+  .sos-strong { background: var(--green-bg); color: var(--green); }
+  .sos-weak { background: var(--red-bg); color: var(--red); }
+  .sos-avg { background: var(--amber-bg); color: var(--amber); }
+ 
+  /* TEAM CARDS */
+  .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .team-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .team-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .t-badge { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+  .t-name { font-size: 14px; font-weight: 700; margin: 0; }
+  .t-role { font-size: 11px; color: var(--muted); margin: 0; }
+  .form-strip { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+  .fdot { width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .f-w { background: var(--green-bg); color: var(--green); }
+  .f-d { background: var(--amber-bg); color: var(--amber); }
+  .f-l { background: var(--red-bg); color: var(--red); }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 6px 0; border-top: 1px solid var(--border); }
+  .stat-l { color: var(--muted); }
+  .stat-v { font-weight: 600; }
+  .sv-g { color: var(--green); } .sv-a { color: var(--amber); } .sv-r { color: var(--red); } .sv-b { color: var(--accent); }
+ 
+  /* METRICS */
+  .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .m-lbl { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+  .m-val { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+  .m-sub { font-size: 11px; color: var(--dim); }
+ 
+  /* SCORES */
+  .scores-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .scores-section h3 { font-size: 13px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .scores-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .score-cell { text-align: center; padding: 10px 4px; border-radius: 7px; }
+  .sc-s { font-size: 15px; font-weight: 700; }
+  .sc-p { font-size: 11px; margin-top: 2px; opacity: .8; }
+  .sc-high { background: rgba(46,204,113,.15); }
+  .sc-high .sc-s { color: var(--green); }
+  .sc-high .sc-p { color: var(--green-text); }
+  .sc-med { background: rgba(243,156,18,.1); }
+  .sc-med .sc-s { color: var(--amber); }
+  .sc-med .sc-p { color: var(--amber-text); }
+  .sc-low { background: rgba(255,255,255,.04); }
+  .sc-low .sc-s { color: var(--muted); }
+  .sc-low .sc-p { color: var(--dim); }
+ 
+  /* HISTORY */
+  .history-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .history-section h3 { font-size: 13px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .history-empty { font-size: 13px; color: var(--dim); text-align: center; padding: 20px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-size: 11px; color: var(--muted); font-weight: 600; text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border2); letter-spacing: .05em; }
+  td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  .result-pill { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .r-correct { background: var(--green-bg); color: var(--green); }
+  .r-wrong { background: var(--red-bg); color: var(--red); }
+  .r-pending { background: rgba(255,255,255,.06); color: var(--muted); }
+ 
+  /* LOADING */
+  .loading { display: none; text-align: center; padding: 40px 20px; }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-size: 14px; color: var(--muted); }
+ 
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .teams-row { grid-template-columns: 1fr; }
+    .vs-label { display: none; }
+    .teams-grid { grid-template-columns: 1fr; }
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+    .scores-grid { grid-template-columns: repeat(3, 1fr); }
+    .prob-pct { font-size: 18px; }
+    main { padding: 20px 14px 60px; }
+  }
+</style>
+</head>
+<body>
+ 
+<header>
+  <div class="logo">Pronos<span>CDM</span> 2026</div>
+  <span class="badge-live">COUPE DU MONDE</span>
+</header>
+ 
+<main>
+  <p class="page-title">Moteur de pronostics</p>
+  <p class="page-sub">Modèle de Poisson + pondération qualité adversaires — colle les stats FootyStats ci-dessous</p>
+ 
+  <div class="input-section">
+    <h2>Nouveau match</h2>
+    <div class="teams-row">
+      <div class="input-group">
+        <label>Équipe 1 (domicile / neutre)</label>
+        <input type="text" id="team1-name" placeholder="ex: France">
+        <textarea id="team1-stats" placeholder="Colle ici les stats FootyStats de l'équipe 1&#10;&#10;Exemple :&#10;Overall: 6W 3D 1L&#10;Scored/match: 1.60&#10;Conceded/match: 0.40&#10;xG: 1.38 / 0.82&#10;PPG: 2.10&#10;Form: DDWWW&#10;Recent opponents: Serbia, Australia, Belgium..."></textarea>
+        <span class="paste-hint">Copie la page FootyStats et colle tout — l'IA extrait ce qu'il faut</span>
+      </div>
+      <div class="vs-label">vs</div>
+      <div class="input-group">
+        <label>Équipe 2</label>
+        <input type="text" id="team2-name" placeholder="ex: Brésil">
+        <textarea id="team2-stats" placeholder="Colle ici les stats FootyStats de l'équipe 2&#10;&#10;Même format — copie toute la page, l'IA trie."></textarea>
+        <span class="paste-hint">Copie la page FootyStats et colle tout — l'IA extrait ce qu'il faut</span>
+      </div>
+    </div>
+    <div class="options-row">
+      <div class="input-group">
+        <label>Clé API Anthropic (optionnelle)</label>
+        <input type="text" id="api-key" placeholder="sk-ant-... (pour analyse IA approfondie)">
+      </div>
+      <div class="input-group">
+        <label>Contexte du match</label>
+        <select id="match-context">
+          <option value="neutral">Terrain neutre (Coupe du Monde)</option>
+          <option value="home">Avantage domicile équipe 1</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-analyze" id="analyze-btn" onclick="analyze()">Générer le pronostic</button>
+  </div>
+ 
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-msg" id="loading-msg">Analyse en cours...</div>
+  </div>
+ 
+  <div id="results">
+    <div class="prono-card" id="prono-card"></div>
+    <div class="teams-grid" id="teams-grid"></div>
+    <div class="metrics-row" id="metrics-row"></div>
+    <div class="scores-section">
+      <h3>Scores les plus probables</h3>
+      <div class="scores-grid" id="scores-grid"></div>
+    </div>
+    <div style="height:16px"></div>
+    <div class="history-section">
+      <h3>Historique des pronostics</h3>
+      <div id="history-content"></div>
+    </div>
+  </div>
+</main>
+ 
+<script>
+// ─── FIFA Rankings (qualité adversaires) ───────────────────────────────────
+const FIFA = {
+  "argentina":1,"france":2,"england":3,"angleterre":3,"belgique":4,"belgium":4,
+  "brazil":5,"brésil":5,"bresil":5,"portugal":6,"netherlands":7,"pays-bas":7,
+  "hollande":7,"espagne":8,"spain":8,"croatia":9,"croatie":9,"italie":10,"italy":10,
+  "maroc":11,"morocco":11,"allemagne":12,"germany":12,"colombie":13,"colombia":13,
+  "japon":14,"japan":14,"usa":15,"états-unis":15,"united states":15,"senegal":16,
+  "sénégal":16,"suisse":17,"switzerland":17,"mexique":18,"mexico":18,
+  "australie":19,"australia":19,"corée du sud":20,"south korea":20,"korea":20,
+  "equateur":21,"ecuador":21,"pologne":22,"poland":22,"danemark":23,"denmark":23,
+  "nigeria":24,"ukraine":25,"autriche":26,"austria":26,"suède":27,"sweden":27,
+  "tunisie":28,"tunisie":28,"hongrie":29,"hungary":29,"turquie":30,"turkey":30,
+  "roumanie":31,"romania":31,"algérie":32,"algerie":32,"cameroun":33,"cameroon":33,
+  "ghana":34,"egypte":35,"egypt":35,"côte d'ivoire":36,"ivory coast":36,
+  "serbie":37,"serbia":37,"grèce":38,"greece":38,"slovaquie":39,"slovakia":39,
+  "pérou":40,"peru":40,"canada":41,"écosse":42,"scotland":42,"venezuela":43,
+  "iran":44,"arabie saoudite":45,"saudi arabia":45,"afrique du sud":52,
+  "south africa":52,"zimbabwe":58,"nicaragua":95,"panama":72,"zambia":90,
+  "zambie":90,"rwanda":95,"angola":75,"iceland":50,"islande":50,"bolivia":68,
+  "bolivie":68,"paraguay":55,"uruguay":22
+};
+ 
+function getFifaRank(name) {
+  if (!name) return 70;
+  const k = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+  for (const [key, val] of Object.entries(FIFA)) {
+    const kn = key.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if (k.includes(kn) || kn.includes(k)) return val;
+  }
+  return 70;
+}
+ 
+function rankToOppQuality(rank) {
+  if (rank <= 10) return 1.40;
+  if (rank <= 20) return 1.25;
+  if (rank <= 35) return 1.10;
+  if (rank <= 50) return 1.00;
+  if (rank <= 70) return 0.88;
+  if (rank <= 100) return 0.75;
+  return 0.62;
+}
+ 
+// ─── PARSERS ───────────────────────────────────────────────────────────────
+function parseFloat2(s) { const m = s.match(/[\d.]+/); return m ? parseFloat(m[0]) : null; }
+ 
+function extractForm(text) {
+  const m = text.match(/\b([WDLVND]{3,10})\b/);
+  if (m) {
+    return m[1].split('').map(c => c === 'V' ? 'W' : c === 'N' ? 'D' : c);
+  }
+  const results = [];
+  const rx = /\b(Win|Victoire|Draw|Nul|Loss|Défaite|W|D|L)\b/gi;
+  let r;
+  while ((r = rx.exec(text)) !== null && results.length < 10) {
+    const c = r[1][0].toUpperCase();
+    results.push(c === 'V' ? 'W' : c === 'N' ? 'D' : c === 'D' && r[1].toLowerCase().startsWith('d') && r[1].length > 1 ? 'D' : c);
+  }
+  return results.length ? results : ['W','W','D','W','L'];
+}
+ 
+function extractStat(text, keys) {
+  for (const key of keys) {
+    const rx = new RegExp(key + '[\\s:]*([\\d.]+)', 'i');
+    const m = text.match(rx);
+    if (m) return parseFloat(m[1]);
+  }
+  return null;
+}
+ 
+function parseStats(text, name) {
+  const scored = extractStat(text, ['Scored\\s*\\/\\s*[Mm]atch','Scored/ Match','Goals Scored.*?([\\d.]+)\\s*Goals']) || 1.4;
+  const conceded = extractStat(text, ['Conceded\\s*\\/\\s*[Mm]atch','Conceded/ Match']) || 1.0;
+  const xgFor = extractStat(text, ['xG For','xG\\s*\\/\\s*Match[^A-Z]*?([\\d.]+)\\s*\\n','xG For / Match']) || scored * 0.9;
+  const xgAgainst = extractStat(text, ['xG Against','xGA']) || conceded * 0.9;
+  const ppg = extractStat(text, ['PPG','Points Per Game','Points\\/Game']) || 1.5;
+  const cs = extractStat(text, ['Clean Sheet[s]?\\s*%?\\s*[:\\s]*([\\d.]+)%?']) || 30;
+  const btts = extractStat(text, ['BTTS\\s*[:\\s]*([\\d.]+)%']) || 40;
+ 
+  const wm = text.match(/(\d+)\s*[Ww]in/); const wins = wm ? parseInt(wm[1]) : 4;
+  const dm = text.match(/(\d+)\s*[Dd]raw/); const draws = dm ? parseInt(dm[1]) : 3;
+  const lm = text.match(/(\d+)\s*[Ll]oss/); const losses = lm ? parseInt(lm[1]) : 3;
+  const played = wins + draws + losses || 10;
+ 
+  // Extract opponent names for SOS
+  const oppPattern = /(?:vs?\.?\s+|against\s+|v\s+)([A-Z][a-zA-Z\s]+?)(?:\s+\d|\n|,|$)/g;
+  const opponents = [];
+  let opp;
+  while ((opp = oppPattern.exec(text)) !== null) {
+    opponents.push(opp[1].trim());
+  }
+  // Also look for score lines like "Mexico 5-1 Serbia"
+  const scorePattern = /[A-Z][a-z]+ \d+-\d+ ([A-Z][a-z]+)/g;
+  let sc2;
+  while ((sc2 = scorePattern.exec(text)) !== null) opponents.push(sc2[1]);
+  const scorePattern2 = /([A-Z][a-z]+) \d+-\d+ [A-Z][a-z]+/g;
+  while ((sc2 = scorePattern2.exec(text)) !== null) opponents.push(sc2[1]);
+ 
+  let sosMultiplier = 1.0;
+  if (opponents.length > 0) {
+    const ranks = opponents.map(o => getFifaRank(o)).filter(r => r < 200);
+    if (ranks.length > 0) {
+      const avgRank = ranks.reduce((a,b) => a+b, 0) / ranks.length;
+      sosMultiplier = rankToOppQuality(avgRank);
+    }
+  } else {
+    sosMultiplier = 1.0;
+  }
+ 
+  const form = extractForm(text);
+ 
+  return { scored, conceded, xgFor, xgAgainst, ppg, cs: cs > 1 ? cs/100 : cs, btts: btts > 1 ? btts/100 : btts, wins, draws, losses, played, form, sosMultiplier, opponents };
+}
+ 
+// ─── POISSON ───────────────────────────────────────────────────────────────
+function poisson(lambda, k) {
+  let f = 1; for (let i = 2; i <= k; i++) f *= i;
+  return Math.exp(-lambda) * Math.pow(lambda, k) / f;
+}
+ 
+function matchProbs(l1, l2, max = 7) {
+  let pH = 0, pD = 0, pA = 0;
+  const mat = [];
+  for (let i = 0; i <= max; i++) {
+    mat[i] = [];
+    for (let j = 0; j <= max; j++) {
+      const p = poisson(l1, i) * poisson(l2, j);
+      mat[i][j] = p;
+      if (i > j) pH += p; else if (i === j) pD += p; else pA += p;
+    }
+  }
+  const t = pH + pD + pA;
+  return { pH: pH/t, pD: pD/t, pA: pA/t, mat };
+}
+ 
+// ─── HISTORY ───────────────────────────────────────────────────────────────
+let history = JSON.parse(localStorage.getItem('pronostics_history') || '[]');
+ 
+function saveHistory(entry) {
+  history.unshift(entry);
+  if (history.length > 20) history = history.slice(0, 20);
+  localStorage.setItem('pronostics_history', JSON.stringify(history));
+}
+ 
+function renderHistory() {
+  const el = document.getElementById('history-content');
+  if (!history.length) {
+    el.innerHTML = '<p class="history-empty">Aucun pronostic enregistré pour l\'instant.</p>';
+    return;
+  }
+  el.innerHTML = `<table><thead><tr>
+    <th>Match</th><th>Pronostic</th><th>Confiance</th><th>Scores</th><th>Statut</th>
+  </tr></thead><tbody>${history.map((h,i) => `
+    <tr>
+      <td>${h.match}</td>
+      <td>${h.verdict}</td>
+      <td>${h.conf}</td>
+      <td style="color:#7a8494;font-size:12px">${h.topScore}</td>
+      <td>
+        <span class="result-pill r-pending" id="res-${i}">${h.result || 'En attente'}</span>
+        ${h.result === 'En attente' ? `<button onclick="markResult(${i},'correct')" style="margin-left:6px;font-size:10px;padding:2px 6px;border-radius:3px;border:1px solid #2ecc71;background:transparent;color:#2ecc71;cursor:pointer">✓</button>
+        <button onclick="markResult(${i},'raté')" style="margin-left:3px;font-size:10px;padding:2px 6px;border-radius:3px;border:1px solid #e74c3c;background:transparent;color:#e74c3c;cursor:pointer">✗</button>` : ''}
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+ 
+function markResult(i, r) {
+  history[i].result = r;
+  localStorage.setItem('pronostics_history', JSON.stringify(history));
+  renderHistory();
+}
+ 
+// ─── MAIN ANALYZE ──────────────────────────────────────────────────────────
+async function analyze() {
+  const name1 = document.getElementById('team1-name').value.trim();
+  const name2 = document.getElementById('team2-name').value.trim();
+  const stats1txt = document.getElementById('team1-stats').value.trim();
+  const stats2txt = document.getElementById('team2-stats').value.trim();
+  const context = document.getElementById('match-context').value;
+  const apiKey = document.getElementById('api-key').value.trim();
+ 
+  if (!name1 || !name2) { alert('Entre les deux noms d\'équipes.'); return; }
+  if (!stats1txt || !stats2txt) { alert('Colle les stats FootyStats pour les deux équipes.'); return; }
+ 
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('analyze-btn').disabled = true;
+ 
+  const setMsg = m => document.getElementById('loading-msg').textContent = m;
+ 
+  try {
+    setMsg('Extraction des statistiques...');
+    const s1 = parseStats(stats1txt, name1);
+    const s2 = parseStats(stats2txt, name2);
+ 
+    setMsg('Calibration du modèle de Poisson...');
+ 
+    // Lambda calibration: 40% stats brutes corrigées SOS + 40% xG + 20% PPG proxy
+    const adjGoals1 = s1.scored * s1.sosMultiplier;
+    const adjGoals2 = s2.scored * s2.sosMultiplier;
+    const adjXg1 = s1.xgFor * s1.sosMultiplier;
+    const adjXg2 = s2.xgFor * s2.sosMultiplier;
+    const ppgProxy1 = (s1.ppg / 3) * 1.8;
+    const ppgProxy2 = (s2.ppg / 3) * 1.8;
+ 
+    let l1 = adjGoals1 * 0.4 + adjXg1 * 0.4 + ppgProxy1 * 0.2;
+    let l2 = adjGoals2 * 0.4 + adjXg2 * 0.4 + ppgProxy2 * 0.2;
+ 
+    if (context === 'home') { l1 *= 1.12; l2 *= 0.92; }
+ 
+    l1 = Math.max(0.25, Math.min(4.5, l1));
+    l2 = Math.max(0.25, Math.min(4.5, l2));
+ 
+    setMsg('Calcul des probabilités...');
+    const { pH, pD, pA, mat } = matchProbs(l1, l2);
+ 
+    const pHr = Math.round(pH * 100);
+    const pDr = Math.round(pD * 100);
+    const pAr = 100 - pHr - pDr;
+ 
+    const max3 = Math.max(pHr, pDr, pAr);
+    let verdict, confText, confClass;
+    if (max3 === pHr) verdict = `Victoire ${name1}`;
+    else if (max3 === pAr) verdict = `Victoire ${name2}`;
+    else verdict = 'Match nul probable';
+ 
+    if (max3 >= 62) { confText = 'Haute'; confClass = 'conf-high'; }
+    else if (max3 >= 47) { confText = 'Moyenne'; confClass = 'conf-med'; }
+    else { confText = 'Faible'; confClass = 'conf-low'; }
+ 
+    const btts = (1 - poisson(l1, 0)) * (1 - poisson(l2, 0));
+    const over25 = 1 - ([0,1,2].reduce((s,k) => s + Array.from({length: 3-k}, (_,j) => poisson(l1,k)*poisson(l2,j)).reduce((a,b)=>a+b,0), 0));
+    const expectedGoals = (l1 + l2).toFixed(1);
+ 
+    const sos1label = s1.sosMultiplier >= 1.2 ? 'Forts' : s1.sosMultiplier >= 1.0 ? 'Moyens' : 'Faibles';
+    const sos2label = s2.sosMultiplier >= 1.2 ? 'Forts' : s2.sosMultiplier >= 1.0 ? 'Moyens' : 'Faibles';
+    const sos1cls = s1.sosMultiplier >= 1.1 ? 'sos-strong' : s1.sosMultiplier >= 0.95 ? 'sos-avg' : 'sos-weak';
+    const sos2cls = s2.sosMultiplier >= 1.1 ? 'sos-strong' : s2.sosMultiplier >= 0.95 ? 'sos-avg' : 'sos-weak';
+ 
+    // Top scores
+    const topScores = [];
+    for (let i = 0; i <= 5; i++) for (let j = 0; j <= 5; j++) topScores.push({i,j,p:mat[i][j]});
+    topScores.sort((a,b) => b.p - a.p);
+    const top6 = topScores.slice(0, 6);
+    const maxP = top6[0].p;
+ 
+    // ─── If API key, enhance with Claude ─────────────────────────────────
+    let aiInsight = null;
+    if (apiKey && apiKey.startsWith('sk-ant')) {
+      setMsg('Analyse approfondie par Claude...');
+      try {
+        const prompt = `Tu es un expert en pronostics football. Voici les stats du match ${name1} vs ${name2} pour la Coupe du Monde 2026:
+ 
+MEXIQUE (${name1}): PPG ${s1.ppg}, buts marqués/match ${s1.scored}, buts encaissés/match ${s1.conceded}, xG pour ${s1.xgFor}, xG contre ${s1.xgAgainst}, clean sheets ${Math.round(s1.cs*100)}%, BTTS ${Math.round(s1.btts*100)}%, qualité adversaires ×${s1.sosMultiplier.toFixed(2)} (${sos1label})
+ 
+ADVERSAIRE (${name2}): PPG ${s2.ppg}, buts marqués/match ${s2.scored}, buts encaissés/match ${s2.conceded}, xG pour ${s2.xgFor}, xG contre ${s2.xgAgainst}, clean sheets ${Math.round(s2.cs*100)}%, BTTS ${Math.round(s2.btts*100)}%, qualité adversaires ×${s2.sosMultiplier.toFixed(2)} (${sos2label})
+ 
+Le modèle de Poisson donne: ${name1} ${pHr}% / Nul ${pDr}% / ${name2} ${pAr}%, λ1=${l1.toFixed(2)}, λ2=${l2.toFixed(2)}.
+ 
+Donne une analyse tactique courte (3-4 phrases max) en français, mettant en avant les facteurs clés qui justifient ce pronostic. Sois direct et précis.`;
+ 
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
+        });
+        const data = await resp.json();
+        if (data.content && data.content[0]) aiInsight = data.content[0].text;
+      } catch(e) { console.warn('Claude API error:', e); }
+    }
+ 
+    // ─── RENDER ───────────────────────────────────────────────────────────
+    setMsg('Rendu...');
+ 
+    document.getElementById('prono-card').innerHTML = `
+      <div class="prono-top">
+        <span class="prono-match">${name1} vs ${name2}</span>
+        <span class="conf-pill ${confClass}">Confiance ${confText}</span>
+      </div>
+      <div class="prob-row">
+        <div class="prob-item">
+          <div class="prob-team">${name1}</div>
+          <div class="prob-bar-wrap"><div class="prob-bar" style="width:${pHr}%;background:#4f8ef7"></div></div>
+          <div class="prob-pct pct-home">${pHr}%</div>
+        </div>
+        <div class="prob-item">
+          <div class="prob-team">Nul</div>
+          <div class="prob-bar-wrap"><div class="prob-bar" style="width:${pDr}%;background:#7a8494"></div></div>
+          <div class="prob-pct pct-draw">${pDr}%</div>
+        </div>
+        <div class="prob-item">
+          <div class="prob-team">${name2}</div>
+          <div class="prob-bar-wrap"><div class="prob-bar" style="width:${pAr}%;background:#e67e22"></div></div>
+          <div class="prob-pct pct-away">${pAr}%</div>
+        </div>
+      </div>
+      <div class="verdict-box">
+        <div class="v-icon">🏆</div>
+        <div>
+          <div class="v-main">${verdict}</div>
+          <div class="v-sub">Buts attendus : ~${expectedGoals} — BTTS : ${Math.round(btts*100)}% — Over 2.5 : ${Math.round(over25*100)}%</div>
+        </div>
+      </div>
+      <div class="explain-box">
+        <strong>Analyse du modèle</strong><br>
+        ${name1} affrontait des adversaires <span class="sos-tag ${sos1cls}">${sos1label} ×${s1.sosMultiplier.toFixed(2)}</span> → λ calibré à <strong>${l1.toFixed(2)}</strong> buts/match attendus.<br>
+        ${name2} affrontait des adversaires <span class="sos-tag ${sos2cls}">${sos2label} ×${s2.sosMultiplier.toFixed(2)}</span> → λ calibré à <strong>${l2.toFixed(2)}</strong> buts/match attendus.<br>
+        ${aiInsight ? `<br><strong>Analyse Claude IA :</strong> ${aiInsight}` : ''}
+      </div>
+    `;
+ 
+    document.getElementById('teams-grid').innerHTML = [
+      [name1, s1, '#4f8ef7', 'rgba(79,142,247,0.12)'],
+      [name2, s2, '#e67e22', 'rgba(230,126,34,0.12)']
+    ].map(([n, s, col, bg]) => `
+      <div class="team-card">
+        <div class="team-head">
+          <div class="t-badge" style="background:${bg};color:${col}">${n.slice(0,2).toUpperCase()}</div>
+          <div><p class="t-name">${n}</p><p class="t-role">${s.wins}V ${s.draws}N ${s.losses}D sur ${s.played} matchs</p></div>
+        </div>
+        <div class="form-strip">${s.form.slice(0,10).map(r => `<span class="fdot f-${r.toLowerCase()}">${r}</span>`).join('')}</div>
+        <div class="stat-row"><span class="stat-l">Buts marqués /match</span><span class="stat-v ${s.scored>=1.8?'sv-g':s.scored>=1.2?'sv-b':'sv-a'}">${s.scored.toFixed(2)}</span></div>
+        <div class="stat-row"><span class="stat-l">Buts encaissés /match</span><span class="stat-v ${s.conceded<=0.6?'sv-g':s.conceded<=1.1?'sv-b':'sv-r'}">${s.conceded.toFixed(2)}</span></div>
+        <div class="stat-row"><span class="stat-l">xG pour / contre</span><span class="stat-v">${s.xgFor.toFixed(2)} / ${s.xgAgainst.toFixed(2)}</span></div>
+        <div class="stat-row"><span class="stat-l">PPG</span><span class="stat-v ${s.ppg>=2.0?'sv-g':s.ppg>=1.4?'sv-b':'sv-a'}">${s.ppg.toFixed(2)}</span></div>
+        <div class="stat-row"><span class="stat-l">Clean sheets</span><span class="stat-v">${Math.round(s.cs*100)}%</span></div>
+        <div class="stat-row"><span class="stat-l">Qualité adversaires</span><span class="stat-v" style="color:${s.sosMultiplier>=1.1?'#2ecc71':s.sosMultiplier>=0.95?'#f39c12':'#e74c3c'}">${s.sosMultiplier>=1.2?'Forts':s.sosMultiplier>=1.0?'Moyens':'Faibles'} ×${s.sosMultiplier.toFixed(2)}</span></div>
+        <div class="stat-row"><span class="stat-l">λ Poisson calibré</span><span class="stat-v sv-b">${n===name1?l1.toFixed(2):l2.toFixed(2)} buts/match</span></div>
+      </div>
+    `).join('');
+ 
+    document.getElementById('metrics-row').innerHTML = `
+      <div class="metric"><div class="m-lbl">λ ${name1}</div><div class="m-val" style="color:#4f8ef7">${l1.toFixed(2)}</div><div class="m-sub">buts attendus</div></div>
+      <div class="metric"><div class="m-lbl">λ ${name2}</div><div class="m-val" style="color:#e67e22">${l2.toFixed(2)}</div><div class="m-sub">buts attendus</div></div>
+      <div class="metric"><div class="m-lbl">BTTS</div><div class="m-val">${Math.round(btts*100)}%</div><div class="m-sub">les 2 marquent</div></div>
+      <div class="metric"><div class="m-lbl">Over 2.5</div><div class="m-val">${Math.round(over25*100)}%</div><div class="m-sub">plus de 2 buts</div></div>
+    `;
+ 
+    document.getElementById('scores-grid').innerHTML = top6.map(s => {
+      const ratio = s.p / maxP;
+      const cls = ratio > 0.65 ? 'sc-high' : ratio > 0.35 ? 'sc-med' : 'sc-low';
+      return `<div class="score-cell ${cls}"><div class="sc-s">${s.i}-${s.j}</div><div class="sc-p">${Math.round(s.p*100)}%</div></div>`;
+    }).join('');
+ 
+    // Save to history
+    saveHistory({
+      match: `${name1} vs ${name2}`,
+      verdict,
+      conf: confText,
+      topScore: `${top6[0].i}-${top6[0].j}`,
+      result: 'En attente',
+      date: new Date().toLocaleDateString('fr-FR')
+    });
+    renderHistory();
+ 
+    document.getElementById('results').style.display = 'block';
+ 
+  } catch(err) {
+    alert('Erreur : ' + err.message);
+    console.error(err);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('analyze-btn').disabled = false;
+  }
+}
+ 
+// Init history on load
+renderHistory();
+</script>
+</body>
+</html>
+ 
